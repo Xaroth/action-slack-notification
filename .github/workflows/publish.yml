@@ -29,7 +29,8 @@ jobs:
         with:
           slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-          custom-message: ${{ github.ref_name }}
+          message-custom: ${{ github.ref_name }}
+          message-summary: Updating the major version due to new release ${{ github.ref_name }}
 
       - name: Update our tag
         shell: bash
@@ -39,4 +40,4 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git tag -f -a "${MAJOR_VERSION}" -m "${TAG_NAME}"
-          git push origin ${MAJOR_VERSION}
+          git push origin ${MAJOR_VERSION} -f
