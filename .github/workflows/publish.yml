@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           # This turns 'v1.2.3' into 'v1'
-          MAJOR_VERSION=$(echo ${TAG_NAME} | sed -r 's/(v[0-9]+)\..*/\1/')
+          MAJOR_VERSION=$(echo "${TAG_NAME}" | cut -d\. -f1)
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git tag -f -a "${MAJOR_VERSION}" -m "${TAG_NAME}"
