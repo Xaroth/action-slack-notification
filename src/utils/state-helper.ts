@@ -59,12 +59,18 @@ const stateHelper = <T = string>(name: string, options?: StateHelperOptions<T>):
   const value = process.env[`STATE_${name}`]
   let current: T = defaultValue as T
   if (value) {
-    current = toValue ? (toValue(value) as T) : (value as unknown as T)
+    const parsed = toValue ? (toValue(value) as T) : (value as unknown as T)
+    if (parsed) {
+      current = parsed
+    }
   } else if (useFromInput) {
     const fromInput = getInput(name, { required })
     if (fromInput) {
-      current = toValue ? (toValue(fromInput) as T) : (fromInput as unknown as T)
-      if (storeFromInput) setState(current)
+      const parsed = toValue ? (toValue(fromInput) as T) : (fromInput as unknown as T)
+      if (parsed) {
+        current = parsed
+        if (storeFromInput) setState(parsed)
+      }
     }
   }
   return [current, setState]

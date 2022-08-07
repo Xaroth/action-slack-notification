@@ -18612,7 +18612,7 @@ const listCurrentJobsForWorkflowRun = () => __awaiter(void 0, void 0, void 0, fu
     });
 });
 exports.listCurrentJobsForWorkflowRun = listCurrentJobsForWorkflowRun;
-const jobMatcher = /(?<name>\w+) \((?<matrix>[^\(\)]+)\)/;
+const jobMatcher = /(?<name>\w+) \((?<matrix>[^()]+)\)/;
 /**
  * GitHub does not provide the matrix information or a _full_ job name if you are
  * running inside a matrix. We work around this by passing the matrix data as json
@@ -18889,14 +18889,20 @@ const stateHelper = (name, options) => {
     const value = process.env[`STATE_${name}`];
     let current = defaultValue;
     if (value) {
-        current = toValue ? toValue(value) : value;
+        const parsed = toValue ? toValue(value) : value;
+        if (parsed) {
+            current = parsed;
+        }
     }
     else if (useFromInput) {
         const fromInput = (0, core_1.getInput)(name, { required });
         if (fromInput) {
-            current = toValue ? toValue(fromInput) : fromInput;
-            if (storeFromInput)
-                setState(current);
+            const parsed = toValue ? toValue(fromInput) : fromInput;
+            if (parsed) {
+                current = parsed;
+                if (storeFromInput)
+                    setState(parsed);
+            }
         }
     }
     return [current, setState];
