@@ -1,0 +1,53 @@
+{
+  "name": "slack-notification",
+  "version": "1.0.0",
+  "author": "Steven 'Xaroth' Noorbergen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xaroth/action-slack-notification/issues"
+  },
+  "homepage": "https://github.com/xaroth/action-slack-notification#readme",
+  "main": "src/main.ts",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "ncc build src/main.ts",
+    "dev": "ncc build --watch src/main.ts",
+    "format": "prettier --write '**/*.ts'",
+    "test": "jest --watch",
+    "test:format": "prettier --check '**/*.ts'",
+    "test:lint": "eslint --ext .ts src/",
+    "test:unit": "jest",
+    "test:build": "ncc build -C -q src/main.ts",
+    "commit:format": "pretty-quick --staged --check --pattern **/*.ts"
+  },
+  "dependencies": {
+    "@actions/core": "^1.9.0",
+    "@actions/github": "^5.0.3",
+    "@slack/web-api": "^6.7.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^28.1.6",
+    "@types/node": "^18.6.4",
+    "@typescript-eslint/eslint-plugin": "^5.32.0",
+    "@typescript-eslint/parser": "^5.32.0",
+    "@vercel/ncc": "^0.34.0",
+    "eslint": "^8.21.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jest": "^26.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "jest": "^28.1.3",
+    "pre-commit": "^1.2.2",
+    "prettier": "^2.7.1",
+    "pretty-quick": "^3.1.3",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^28.0.7",
+    "typescript": "^4.7.4"
+  },
+  "pre-commit": [
+    "commit:format"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

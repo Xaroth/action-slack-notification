@@ -1,0 +1,60 @@
+name: Send Slack Notification Action
+description: Report current build status on Slack
+branding:
+  icon: volume-2
+  color: blue
+runs:
+  using: node16
+  main: dist/index.js
+  post: dist/index.js
+inputs:
+  channel-name:
+    description: The name of the Slack channel to send to. Required if `channel-id` is not provided. Requires the `channels:read` and `groups:read` OAuth Scopes on slack.
+    requires: false
+  channel-id:
+    description: The ID of the Slack channel to send to. Required if `channel-name` is not provided.
+    required: false
+  message-id:
+    description: The ID of the existing slack message to update.
+    required: false
+  slack-token:
+    description: >
+      The [Slack bot token](https://api.slack.com/docs/token-types) to be used to communicate with Slack.
+      We recommend creating a Slack App and adding that to your workspace. Ensure that the App you created
+      has created a Bot user, and give it access to at least the `chat:write` scope. If you wish to use
+      the `channel-name` option instead of `channel-id`, please ensure that the additionally required
+      scopes are added.
+
+      The token will be stored to be used during the post-action, after which it will be cleaned up.
+
+      If you wish to update the message in transit, be sure to also specify the `message-id` output from
+      the first time this action is run this workflow.
+  github-token:
+    description: >
+      Personal access token (PAT) used to access GitHub.
+      We recommend using a service account with the least permissions necessary.
+
+      Also when generating a new PAT, select the least scopes necessary.
+      [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
+    default: ${{ github.token }}
+  matrix:
+    description: >
+      To specify which matrix job is being run specifically for this workflow.
+
+      The default value (`toJSON(matrix)`) generally does not need changing.
+
+      With inaccurate matrix information we will be unable to determine which
+      job is running for which matrix, and as such, you may notice the 'unknown'
+      state being reported.
+    default: ${{ toJSON(matrix) }}
+  message-custom:
+    description: To specify your own custom 'extra' message to be sent to the channel.
+  message-summary:
+    description: To specify your own custom summary message
+  message-text:
+    description: To specify your own custom pre-text.
+outputs:
+  message-id:
+    description: The ID of the slack message sent
+  channel-id:
+    description: The resolved channel ID that we'll be sending to.

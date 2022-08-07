@@ -1,0 +1,42 @@
+name: Publish version
+
+on:
+  release:
+    types:
+      - published
+
+env:
+  TAG_NAME: ${{ github.event.release.tag_name }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Send slack notification
+        # We add this if to ensure this doesn't run on forks, or when working on a pull request.
+        # If you really want to run this on your own fork, configure the required secrets.
+        if: env.SLACK_BOT_TOKEN && env.SLACK_CHANNEL_ID
+        continue-on-error: true
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        uses: ./
+        with:
+          slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          custom-message: ${{ github.ref_name }}
+
+      - name: Update our tag
+        shell: bash
+        run: |
+          # This turns 'v1.2.3' into 'v1'
+          MAJOR_VERSION=$(echo ${TAG_NAME} | sed -r 's/(v[0-9]+)\..*/\1/')
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag -f -a "${MAJOR_VERSION}" -m "${TAG_NAME}"
+          git push origin ${MAJOR_VERSION}
