@@ -1,5 +1,6 @@
 import { setFailed } from '@actions/core'
 import { ChatPostMessageArguments, ChatUpdateArguments, WebClient } from '@slack/web-api'
+import { inspect } from 'util'
 
 import * as state from 'utils/state'
 import * as github from 'utils/github'
@@ -94,6 +95,11 @@ const cleanup = async (): Promise<void> => {
   } else {
     // TODO: Notify user we never sent a message.
   }
+}
+
+if (process.env['RUNNER_DEBUG'] === '1') {
+  console.log('Observed information')
+  console.log(inspect(state, false, null))
 }
 
 if (!state.isPost) {

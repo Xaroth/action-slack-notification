@@ -18467,6 +18467,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __nccwpck_require__(2186);
 const web_api_1 = __nccwpck_require__(431);
+const util_1 = __nccwpck_require__(3837);
 const state = __importStar(__nccwpck_require__(403));
 const github = __importStar(__nccwpck_require__(1225));
 const slack_1 = __nccwpck_require__(806);
@@ -18543,6 +18544,10 @@ const cleanup = () => __awaiter(void 0, void 0, void 0, function* () {
         // TODO: Notify user we never sent a message.
     }
 });
+if (process.env['RUNNER_DEBUG'] === '1') {
+    console.log('Observed information');
+    console.log((0, util_1.inspect)(state, false, null));
+}
 if (!state.isPost) {
     console.log('Posting message');
     run();
@@ -18595,7 +18600,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getJobJustStarted = exports.getCurrentJobConclusion = exports.getCurrentJobForWorkflowRun = exports.matchJobByName = exports.listCurrentJobsForWorkflowRun = exports.getOctokit = void 0;
 const github_1 = __nccwpck_require__(5438);
-const util_1 = __nccwpck_require__(3837);
 const state = __importStar(__nccwpck_require__(403));
 const { apiUrl: baseUrl, job } = github_1.context;
 const attempt_number = parseInt(process.env.GITHUB_RUN_ATTEMPT || '1', 10);
@@ -18658,7 +18662,6 @@ const getCurrentJobConclusion = (currentJob) => __awaiter(void 0, void 0, void 0
     // To make it easier, we check only the completed steps, more
     // specifically, those that have not been skipped.
     const steps = ((job === null || job === void 0 ? void 0 : job.steps) || []).filter((x) => x.status === 'completed' && x.conclusion !== 'skipped');
-    console.log((0, util_1.inspect)(steps, false, null));
     if (steps.find((x) => x.conclusion === 'failure'))
         return 'failure';
     if (steps.find((x) => x.conclusion === 'cancelled'))
@@ -18877,35 +18880,51 @@ exports.buildAttachmentsMessage = buildAttachmentsMessage;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.EXPORT_VAR_PREFIX = void 0;
 const core_1 = __nccwpck_require__(2186);
+exports.EXPORT_VAR_PREFIX = 'SLACK_NOTIFICATION_';
+// We set this state in `state.ts`, but we want to have the value here to avoid exporting during post processing
+const IS_POST_PROCESSING = !!process.env[`STATE_is-post`];
+const _getName = (name) => `${name.replace(/ /g, '_').toUpperCase()}`;
+const getStateBase = (name) => process.env[`${exports.EXPORT_VAR_PREFIX}${_getName(name)}`];
+const saveStateBase = (name, value) => {
+    if (!IS_POST_PROCESSING)
+        (0, core_1.exportVariable)(`${exports.EXPORT_VAR_PREFIX}${_getName(name)}`, value);
+};
 const stateHelper = (name, options) => {
-    const { defaultValue = undefined, toValue, fromValue, required, output = false, useFromInput = true, storeFromInput = true, } = options || {};
+    const { defaultValue = undefined, toValue, fromValue, required, output = false, useFromInput = true, storeFromInput = true, saveState = saveStateBase, getState = getStateBase, } = options || {};
     const setState = (value) => {
-        (0, core_1.saveState)(name, fromValue ? fromValue(value) : value);
+        saveState(name, (fromValue ? fromValue(value) : value));
         if (output) {
             (0, core_1.setOutput)(name, fromValue ? fromValue(value) : value);
         }
     };
-    const value = process.env[`STATE_${name}`];
     let current = defaultValue;
-    if (value) {
-        const parsed = toValue ? toValue(value) : value;
-        if (parsed) {
-            current = parsed;
-        }
-    }
-    else if (useFromInput) {
+    let found = false;
+    if (useFromInput) {
         const fromInput = (0, core_1.getInput)(name, { required });
         if (fromInput) {
             const parsed = toValue ? toValue(fromInput) : fromInput;
             if (parsed) {
                 current = parsed;
+                found = true;
                 if (storeFromInput)
                     setState(parsed);
             }
         }
     }
-    return [current, setState];
+    // If we're post-processing, we will always try to load from state to ensure the latest saved data is used
+    if (!found || IS_POST_PROCESSING) {
+        const value = getState(name);
+        if (value) {
+            const parsed = toValue ? toValue(value) : value;
+            if (parsed) {
+                current = parsed;
+                found = true;
+            }
+        }
+    }
+    return [current, setState, found];
 };
 exports["default"] = stateHelper;
 
@@ -18925,11 +18944,14 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
 const core_1 = __nccwpck_require__(2186);
 const state_helper_1 = __importDefault(__nccwpck_require__(1622));
+const getState = (name) => process.env[`STATE_${name}`];
 _a = (0, state_helper_1.default)('is-post', {
     toValue: (val) => !!val,
     fromValue: (val) => `${val}`,
     defaultValue: false,
     useFromInput: false,
+    saveState: core_1.saveState,
+    getState: getState,
 }), exports.isPost = _a[0], exports.setIsPost = _a[1];
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 (0, exports.setIsPost)(true);
