@@ -2,6 +2,7 @@ name: Compile if needed
 
 on:
   push:
+  workflow_dispatch:
 
 jobs:
   check-formatting:
