@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Send slack notification
         # We add this if to ensure this doesn't run on forks.
         # If you really want to run this on your own fork, configure the required secrets.
@@ -21,8 +23,7 @@ jobs:
         with:
           slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-
-      - uses: actions/checkout@v3
+          message-summary: Checking if ${{ github.ref_name }} needs an updated build
 
       - uses: actions/setup-node@v3
         with:
@@ -49,7 +50,7 @@ jobs:
 
       - name: Check for modified files
         id: is-modified
-        run: echo ::set-output name=modified::$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)
+        run: echo ::set-output name=modified::$(if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then echo "true"; else echo "false"; fi)
 
       - name: Push changes if there are any
         if: steps.is-modified.outputs.modified == 'true'

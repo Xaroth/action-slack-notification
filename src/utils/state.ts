@@ -1,11 +1,14 @@
-import { getInput } from '@actions/core'
+import { getInput, saveState } from '@actions/core'
 import stateHelper from 'utils/state-helper'
 
+const getState = (name: string): string | undefined => process.env[`STATE_${name}`]
 export const [isPost, setIsPost] = stateHelper<boolean>('is-post', {
   toValue: (val: string) => !!val,
   fromValue: (val: boolean) => `${val}`,
   defaultValue: false,
   useFromInput: false,
+  saveState: saveState,
+  getState: getState,
 })
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 setIsPost(true)

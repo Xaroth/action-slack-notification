@@ -1,21 +1,27 @@
-import stateHelper from 'utils/state-helper'
+import stateHelper, { EXPORT_VAR_PREFIX } from 'utils/state-helper'
 import * as coreCommand from '@actions/core/lib/command'
+import { inspect } from 'util'
 
 describe('state tests', () => {
-  const name = 'testValue'
+  const name = 'TESTVALUE'
   const value = 'test'
+
+  beforeAll(() => {
+    process.env = {}
+  })
 
   it('stateHelper picks up on process.env variables', () => {
     const [unset] = stateHelper(name)
 
     // This env variable was never set, so we should expect it to be undefined
     expect(unset).toBeUndefined()
-    process.env[`STATE_${name}`] = value
+    process.env[`${EXPORT_VAR_PREFIX}${name}`] = value
 
     // While we may have set it now, stateHelper has already done its thing
     // so this variable should still be undefined
     expect(unset).toBeUndefined()
 
+    process.env[`${EXPORT_VAR_PREFIX}${name}`] = value
     const [withValue] = stateHelper(name)
     // Now that we called it after setting the env var, it should pick up on the value.
     expect(withValue).toEqual(value)
@@ -30,6 +36,7 @@ describe('state tests', () => {
   })
 
   it('returns the default when one is specified', () => {
+    delete process.env[`${EXPORT_VAR_PREFIX}${name}`]
     const defaultValue = 'this is a test'
     const [value] = stateHelper(name, { defaultValue })
 
@@ -37,7 +44,7 @@ describe('state tests', () => {
   })
 
   it('ignores "null" values', () => {
-    process.env[`STATE_${name}`] = 'null'
+    process.env[`${EXPORT_VAR_PREFIX}${name}`] = 'null'
     const [jsonValue] = stateHelper(name, {
       toValue: (val: string) => JSON.parse(val),
       fromValue: (val: Record<string, string>) => JSON.stringify(val),
@@ -48,6 +55,6 @@ describe('state tests', () => {
 
   afterEach(() => {
     jest.restoreAllMocks()
-    delete process.env[`STATE_${name}`]
+    delete process.env[`${EXPORT_VAR_PREFIX}${name}`]
   })
 })
