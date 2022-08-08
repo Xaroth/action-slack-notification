@@ -87,8 +87,6 @@ export const getCurrentJobConclusion = async (currentJob?: CurrentJob): Promise<
   // specifically, those that have not been skipped.
   const steps = (job?.steps || []).filter((x) => x.status === 'completed' && x.conclusion !== 'skipped')
 
-  console.log(inspect(steps, false, null))
-
   if (steps.find((x) => x.conclusion === 'failure')) return 'failure'
   if (steps.find((x) => x.conclusion === 'cancelled')) return 'cancelled'
 
