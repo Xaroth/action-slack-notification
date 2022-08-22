@@ -1,4 +1,4 @@
-import { setOutput, getInput, exportVariable } from '@actions/core'
+import { setOutput, setSecret, getInput, exportVariable } from '@actions/core'
 
 export type StateHelper<T> = [currentState: T, setState: (value: T) => void, hasValue: boolean]
 export interface StateHelperOptions<T> {
@@ -38,6 +38,11 @@ export interface StateHelperOptions<T> {
   storeFromInput?: boolean
 
   /**
+   * Is Sensitive
+   */
+  isSensitive?: boolean
+
+  /**
    * The function to get saved state data
    */
   getState?: (name: string) => string | undefined
@@ -55,7 +60,7 @@ const IS_POST_PROCESSING = !!process.env[`STATE_is-post`]
 
 const _getName = (name: string): string => `${name.replace(/ /g, '_').toUpperCase()}`
 const getStateBase = (name: string): string | undefined => process.env[`${EXPORT_VAR_PREFIX}${_getName(name)}`]
-const saveStateBase = (name: string, value: string) => {
+const saveStateBase = (name: string, value: string): void => {
   if (!IS_POST_PROCESSING) exportVariable(`${EXPORT_VAR_PREFIX}${_getName(name)}`, value)
 }
 
@@ -68,14 +73,19 @@ const stateHelper = <T = string>(name: string, options?: StateHelperOptions<T>):
     output = false,
     useFromInput = true,
     storeFromInput = true,
+    isSensitive = false,
     saveState = saveStateBase,
     getState = getStateBase,
   } = options || {}
 
   const setState = (value: T): void => {
-    saveState(name, (fromValue ? fromValue(value) : value) as string)
+    const processedValue = (fromValue ? fromValue(value) : value) as string
+    if (isSensitive) {
+      setSecret(processedValue)
+    }
+    saveState(name, processedValue)
     if (output) {
-      setOutput(name, fromValue ? fromValue(value) : value)
+      setOutput(name, processedValue)
     }
   }
   let current: T = defaultValue as T
