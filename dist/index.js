@@ -19546,11 +19546,15 @@ const saveStateBase = (name, value) => {
         (0, core_1.exportVariable)(`${exports.EXPORT_VAR_PREFIX}${_getName(name)}`, value);
 };
 const stateHelper = (name, options) => {
-    const { defaultValue = undefined, toValue, fromValue, required, output = false, useFromInput = true, storeFromInput = true, saveState = saveStateBase, getState = getStateBase, } = options || {};
+    const { defaultValue = undefined, toValue, fromValue, required, output = false, useFromInput = true, storeFromInput = true, isSensitive = false, saveState = saveStateBase, getState = getStateBase, } = options || {};
     const setState = (value) => {
-        saveState(name, (fromValue ? fromValue(value) : value));
+        const processedValue = (fromValue ? fromValue(value) : value);
+        if (isSensitive) {
+            (0, core_1.setSecret)(processedValue);
+        }
+        saveState(name, processedValue);
         if (output) {
-            (0, core_1.setOutput)(name, fromValue ? fromValue(value) : value);
+            (0, core_1.setOutput)(name, processedValue);
         }
     };
     let current = defaultValue;
@@ -19609,8 +19613,8 @@ _a = (0, state_helper_1.default)('is-post', {
 }), exports.isPost = _a[0], exports.setIsPost = _a[1];
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 (0, exports.setIsPost)(true);
-_b = (0, state_helper_1.default)('slack-token'), exports.slackToken = _b[0], exports.setSlackToken = _b[1];
-_c = (0, state_helper_1.default)('github-token', { required: true }), exports.githubToken = _c[0], exports.setGithubToken = _c[1];
+_b = (0, state_helper_1.default)('slack-token', { isSensitive: true }), exports.slackToken = _b[0], exports.setSlackToken = _b[1];
+_c = (0, state_helper_1.default)('github-token', { required: true, isSensitive: true }), exports.githubToken = _c[0], exports.setGithubToken = _c[1];
 _d = (0, state_helper_1.default)('matrix', {
     toValue: (val) => JSON.parse(val),
     fromValue: (val) => JSON.stringify(val),

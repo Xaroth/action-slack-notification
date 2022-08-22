@@ -13,8 +13,8 @@ export const [isPost, setIsPost] = stateHelper<boolean>('is-post', {
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 setIsPost(true)
 
-export const [slackToken, setSlackToken] = stateHelper('slack-token')
-export const [githubToken, setGithubToken] = stateHelper('github-token', { required: true })
+export const [slackToken, setSlackToken] = stateHelper('slack-token', { isSensitive: true })
+export const [githubToken, setGithubToken] = stateHelper('github-token', { required: true, isSensitive: true })
 export const [matrix, setMatrix] = stateHelper<Record<string, string>>('matrix', {
   toValue: (val: string) => JSON.parse(val),
   fromValue: (val: Record<string, string>) => JSON.stringify(val),
