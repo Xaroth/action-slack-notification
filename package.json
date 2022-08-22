@@ -7,6 +7,10 @@
     "url": "https://github.com/xaroth/action-slack-notification/issues"
   },
   "homepage": "https://github.com/xaroth/action-slack-notification#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xaroth/action-slack-notification"
+  },
   "main": "src/main.ts",
   "scripts": {
     "clean": "rimraf dist",
