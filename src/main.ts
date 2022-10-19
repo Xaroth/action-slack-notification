@@ -4,6 +4,7 @@ import { inspect } from 'util'
 
 import * as state from 'utils/state'
 import * as github from 'utils/github'
+import * as log from 'utils/log'
 
 import { buildAttachmentsMessage, lookupChannel } from 'utils/slack'
 
@@ -69,7 +70,17 @@ const run = async (): Promise<void> => {
   }
 }
 
+/**
+ * Set a promise to resolve after a certain time, making it a crude sleepms implementation
+ * @param ms the time to sleep
+ */
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
 const cleanup = async (): Promise<void> => {
+  // We wait for a few seconds to ensure that all our API calls will reflect the most current data.
+  // Occasionally we are so fast with polling the API that it has not yet caught up on the current state
+  // giving us outdated information (sometimes even leading to false success runs)
+  await sleep(5000)
   const currentJob = await github.getCurrentJobForWorkflowRun()
 
   if (state.messageId && state.githubToken && state.slackToken && state.channelId) {
@@ -97,10 +108,8 @@ const cleanup = async (): Promise<void> => {
   }
 }
 
-if (process.env['RUNNER_DEBUG'] === '1') {
-  console.log('Observed information')
-  console.log(inspect(state, false, null))
-}
+log.debug('Observed information: ')
+log.debug(inspect(state, false, null))
 
 if (!state.isPost) {
   console.log('Posting message')
