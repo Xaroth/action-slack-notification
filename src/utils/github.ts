@@ -4,7 +4,9 @@ import type { OctokitOptions } from '@octokit/core/dist-types/types'
 import type { components } from '@octokit/openapi-types/types'
 import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types'
 import { inspect } from 'util'
+
 import * as state from './state'
+import * as log from './log'
 
 const { apiUrl: baseUrl, job } = context
 
@@ -76,6 +78,9 @@ type Conclusion = 'success' | 'failure' | 'unknown' | 'skipped' | 'cancelled'
 
 export const getCurrentJobConclusion = async (currentJob?: CurrentJob): Promise<Conclusion> => {
   const job = currentJob ?? (await getCurrentJobForWorkflowRun())
+
+  log.debug('Current Job Conclusion')
+  log.debug(inspect(job?.steps || [], false, null))
 
   // Since we are checking the current running job, we can not trust
   // the `conclusion` field as it will remain `null` until the job has
