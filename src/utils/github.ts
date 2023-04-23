@@ -33,7 +33,6 @@ export const listCurrentJobsForWorkflowRun = async (): Promise<
 
 const jobMatcher = /(?<name>\w+) \((?<matrix>[^()]+)\)/
 
-
 const getMatrixData = (): string[] | undefined => {
   const values = Object.values(state.matrix)
   if (values.length === 0) return
