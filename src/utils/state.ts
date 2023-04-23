@@ -13,6 +13,16 @@ export const [isPost, setIsPost] = stateHelper<boolean>('is-post', {
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 setIsPost(true)
 
+// This is a bit of a hack: we want to be able to detect if we've run before or not, so we force the value to be
+// `true`
+export const [hasRunBefore, setHasRunBefore] = stateHelper<boolean>('has-run-before', {
+  toValue: (val: string) => !!val,
+  fromValue: () => `true`,
+  defaultValue: false,
+})
+// This does not update hasRunBefore
+setHasRunBefore(true)
+
 export const [slackToken, setSlackToken] = stateHelper('slack-token', { isSensitive: true })
 export const [githubToken, setGithubToken] = stateHelper('github-token', { required: true, isSensitive: true })
 export const [matrix, setMatrix] = stateHelper<Record<string, string>>('matrix', {
@@ -21,6 +31,7 @@ export const [matrix, setMatrix] = stateHelper<Record<string, string>>('matrix',
   defaultValue: {},
 })
 
+export const status = getInput('job-status') as 'success' | 'failure' | 'cancelled' | 'skipped'
 export const channelName = getInput('channel-name')
 export const [channelId, setChannelId] = stateHelper('channel-id', { output: true })
 
@@ -37,6 +48,8 @@ export const currentState = (): Record<string, unknown> => {
     'slack-token-provided': Boolean(slackToken),
     'github-token-provided': Boolean(githubToken),
     matrix,
+    status,
+    'has-run-before': hasRunBefore,
     'channel-name': channelName,
     'channel-id': channelId,
     'message-id': messageId,

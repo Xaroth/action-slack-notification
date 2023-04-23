@@ -47,7 +47,7 @@ const run = async (): Promise<void> => {
       }
     }
 
-    const status = (await github.getJobJustStarted(currentJob)) ? 'started' : 'in_progress'
+    const status = state.hasRunBefore ? 'in_progress' : 'started'
     const attachments = buildAttachmentsMessage({
       status,
       jobId: currentJob?.id,
@@ -85,11 +85,9 @@ const cleanup = async (): Promise<void> => {
   const currentJob = await github.getCurrentJobForWorkflowRun()
 
   if (state.messageId && state.githubToken && state.slackToken && state.channelId) {
-    const status = await github.getCurrentJobConclusion(currentJob)
-
     const slack = new WebClient(state.slackToken)
     const attachments = buildAttachmentsMessage({
-      status,
+      status: state.status,
       jobId: currentJob?.id,
     })
 

@@ -8,6 +8,10 @@ runs:
   main: dist/index.js
   post: dist/index.js
 inputs:
+  job-status:
+    description: The status of the current running job. You do not need to set this.
+    required: false
+    default: ${{ job.status }}
   channel-name:
     description: The name of the Slack channel to send to. Required if `channel-id` is not provided. Requires the `channels:read` and `groups:read` OAuth Scopes on slack.
     requires: false
