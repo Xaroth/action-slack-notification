@@ -4,11 +4,41 @@ import type { OctokitOptions } from '@octokit/core/dist-types/types'
 import type { components } from '@octokit/openapi-types/types'
 import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types'
 import { inspect } from 'util'
+import { load } from 'js-yaml'
+import { readFileSync } from 'fs'
 
 import * as state from './state'
 import * as log from './log'
 
-const { apiUrl: baseUrl, job } = context
+const {
+  apiUrl: baseUrl,
+  job,
+  payload: { workflow },
+} = context
+
+interface Workflow {
+  [key: string]: unknown
+  name?: string
+  jobs: Record<
+    string,
+    {
+      name?: string
+    }
+  >
+}
+
+let jobName: string = job
+try {
+  const contents = readFileSync(workflow, 'utf8')
+  const data = load(contents) as Workflow
+  jobName = data.jobs[job]?.name ?? job
+} catch (e) {
+  log.error(`Unable to parse workflow file ${workflow}: ${e}`)
+  log.warning('Be sure to run actions/checkout@v3 _before_ this action.')
+}
+if (jobName.indexOf('${{') !== -1) {
+  log.warning('Job name contains a matrix variable. This is not supported.')
+}
 
 const attempt_number = parseInt(process.env.GITHUB_RUN_ATTEMPT || '1', 10)
 
@@ -52,7 +82,7 @@ const getMatrixData = (): string[] | undefined => {
  * @returns True if the job is the current one based on matrix data
  */
 export const matchJobByName = (jobItem: components['schemas']['job']): boolean => {
-  if (jobItem.name === job) return true
+  if (jobItem.name === jobName) return true
 
   const matrixData = getMatrixData()
   log.debug(`Matrix fields: ${inspect(matrixData, false, null)}`)
@@ -60,8 +90,10 @@ export const matchJobByName = (jobItem: components['schemas']['job']): boolean =
     const { name = '', matrix = '' } = jobItem.name.match(jobMatcher)?.groups || {}
 
     log.debug(`Job name: '${name.trim()}'`)
-    log.debug(`Expected job name: ${job}`)
-    if (name.trim() !== job) return false
+    log.debug(`Expected job name: ${jobName}`)
+
+    if (name.trim().localeCompare(jobName, undefined, { sensitivity: 'base' }) !== 0) return false
+
     const matrixParts = matrix.split(', ') as string[]
     log.debug(`Job matrix fields: ${inspect(matrixParts, false, null)}`)
 
