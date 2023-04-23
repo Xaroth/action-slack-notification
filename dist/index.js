@@ -23861,7 +23861,7 @@ const run = async () => {
                 ts: state.messageId,
             };
         }
-        const status = (await github.getJobJustStarted(currentJob)) ? 'started' : 'in_progress';
+        const status = state.hasRunBefore ? 'in_progress' : 'started';
         const attachments = (0, slack_1.buildAttachmentsMessage)({
             status,
             jobId: currentJob === null || currentJob === void 0 ? void 0 : currentJob.id,
@@ -23895,10 +23895,9 @@ const cleanup = async () => {
     await sleep(5000);
     const currentJob = await github.getCurrentJobForWorkflowRun();
     if (state.messageId && state.githubToken && state.slackToken && state.channelId) {
-        const status = await github.getCurrentJobConclusion(currentJob);
         const slack = new web_api_1.WebClient(state.slackToken);
         const attachments = (0, slack_1.buildAttachmentsMessage)({
-            status,
+            status: state.status,
             jobId: currentJob === null || currentJob === void 0 ? void 0 : currentJob.id,
         });
         const args = {
@@ -24366,9 +24365,9 @@ exports["default"] = stateHelper;
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
+exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.status = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setHasRunBefore = exports.hasRunBefore = exports.setIsPost = exports.isPost = void 0;
 const core_1 = __nccwpck_require__(2186);
 const state_helper_1 = __importDefault(__nccwpck_require__(1622));
 const getState = (name) => process.env[`STATE_${name}`];
@@ -24382,19 +24381,29 @@ _a = (0, state_helper_1.default)('is-post', {
 }), exports.isPost = _a[0], exports.setIsPost = _a[1];
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 (0, exports.setIsPost)(true);
-_b = (0, state_helper_1.default)('slack-token', { isSensitive: true }), exports.slackToken = _b[0], exports.setSlackToken = _b[1];
-_c = (0, state_helper_1.default)('github-token', { required: true, isSensitive: true }), exports.githubToken = _c[0], exports.setGithubToken = _c[1];
-_d = (0, state_helper_1.default)('matrix', {
+// This is a bit of a hack: we want to be able to detect if we've run before or not, so we force the value to be
+// `true`
+_b = (0, state_helper_1.default)('has-run-before', {
+    toValue: (val) => !!val,
+    fromValue: () => `true`,
+    defaultValue: false,
+}), exports.hasRunBefore = _b[0], exports.setHasRunBefore = _b[1];
+// This does not update hasRunBefore
+(0, exports.setHasRunBefore)(true);
+_c = (0, state_helper_1.default)('slack-token', { isSensitive: true }), exports.slackToken = _c[0], exports.setSlackToken = _c[1];
+_d = (0, state_helper_1.default)('github-token', { required: true, isSensitive: true }), exports.githubToken = _d[0], exports.setGithubToken = _d[1];
+_e = (0, state_helper_1.default)('matrix', {
     toValue: (val) => JSON.parse(val),
     fromValue: (val) => JSON.stringify(val),
     defaultValue: {},
-}), exports.matrix = _d[0], exports.setMatrix = _d[1];
+}), exports.matrix = _e[0], exports.setMatrix = _e[1];
+exports.status = (0, core_1.getInput)('job-status');
 exports.channelName = (0, core_1.getInput)('channel-name');
-_e = (0, state_helper_1.default)('channel-id', { output: true }), exports.channelId = _e[0], exports.setChannelId = _e[1];
-_f = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _f[0], exports.setMessageId = _f[1];
-_g = (0, state_helper_1.default)('message-custom'), exports.customMessage = _g[0], exports.setCustomMessage = _g[1];
-_h = (0, state_helper_1.default)('message-summary'), exports.summary = _h[0], exports.setSummary = _h[1];
-_j = (0, state_helper_1.default)('message-text'), exports.text = _j[0], exports.setText = _j[1];
+_f = (0, state_helper_1.default)('channel-id', { output: true }), exports.channelId = _f[0], exports.setChannelId = _f[1];
+_g = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _g[0], exports.setMessageId = _g[1];
+_h = (0, state_helper_1.default)('message-custom'), exports.customMessage = _h[0], exports.setCustomMessage = _h[1];
+_j = (0, state_helper_1.default)('message-summary'), exports.summary = _j[0], exports.setSummary = _j[1];
+_k = (0, state_helper_1.default)('message-text'), exports.text = _k[0], exports.setText = _k[1];
 const currentState = () => {
     // Instead of just dumping the entire state, we sanitize it a bit, adding some more descriptive names.
     return {
@@ -24402,6 +24411,8 @@ const currentState = () => {
         'slack-token-provided': Boolean(exports.slackToken),
         'github-token-provided': Boolean(exports.githubToken),
         matrix: exports.matrix,
+        status: exports.status,
+        'has-run-before': exports.hasRunBefore,
         'channel-name': exports.channelName,
         'channel-id': exports.channelId,
         'message-id': exports.messageId,
