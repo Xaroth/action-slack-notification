@@ -53,11 +53,15 @@ const getMatrixData = (): string[] | undefined => {
  */
 export const matchJobByName = (jobItem: components['schemas']['job']): boolean => {
   const matrixData = getMatrixData()
+  log.debug(`Matrix fields: ${inspect(matrixData, false, null)}`)
   if (matrixData) {
     const { name = '', matrix = '' } = jobItem.name.match(jobMatcher)?.groups || {}
 
+    log.debug(`Job name: '${name.trim()}'`)
+    log.debug(`Expected job name: ${job}`)
     if (name.trim() !== job) return false
     const matrixParts = matrix.split(', ') as string[]
+    log.debug(`Job matrix fields: ${inspect(matrixParts, false, null)}`)
 
     return matrixParts.every((x) => matrixData.indexOf(x) !== -1)
   }
@@ -73,11 +77,22 @@ export const getCurrentJobForWorkflowRun = async (): Promise<CurrentJob | undefi
   } = await listCurrentJobsForWorkflowRun()
 
   if (status != 200) {
-    // TODO: Logging of failed request.
+    log.warning(`Failed to get current job for workflow run: ${status}`)
+    if (status === 403) {
+      log.warning(`Make sure the token has the 'actions:read' scope, and that a valid token is provided.`)
+    }
     return undefined
   }
 
-  return jobs.find(matchJobByName)
+  const found = jobs.find(matchJobByName)
+  if (!found) {
+    log.startGroup('Current job not found')
+    log.info(inspect(jobs, false, null))
+    log.info('Matrix data:')
+    log.info(inspect(getMatrixData(), false, null))
+    log.endGroup()
+  }
+  return found
 }
 
 type Conclusion = 'success' | 'failure' | 'unknown' | 'skipped' | 'cancelled'
@@ -85,8 +100,9 @@ type Conclusion = 'success' | 'failure' | 'unknown' | 'skipped' | 'cancelled'
 export const getCurrentJobConclusion = async (currentJob?: CurrentJob): Promise<Conclusion> => {
   const job = currentJob ?? (await getCurrentJobForWorkflowRun())
 
-  log.debug('Current Job Conclusion')
-  log.debug(inspect(job?.steps || [], false, null))
+  log.startGroup('Current job')
+  log.info(inspect(job?.steps || [], false, null))
+  log.endGroup()
 
   // Since we are checking the current running job, we can not trust
   // the `conclusion` field as it will remain `null` until the job has

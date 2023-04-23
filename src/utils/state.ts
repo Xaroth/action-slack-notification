@@ -29,3 +29,19 @@ export const [messageId, setMessageId] = stateHelper('message-id', { output: tru
 export const [customMessage, setCustomMessage] = stateHelper('message-custom')
 export const [summary, setSummary] = stateHelper('message-summary')
 export const [text, setText] = stateHelper('message-text')
+
+export const currentState = (): Record<string, unknown> => {
+  // Instead of just dumping the entire state, we sanitize it a bit, adding some more descriptive names.
+  return {
+    'is-post-processing': isPost,
+    'slack-token-provided': Boolean(slackToken),
+    'github-token-provided': Boolean(githubToken),
+    matrix,
+    'channel-name': channelName,
+    'channel-id': channelId,
+    'message-id': messageId,
+    'message-custom': customMessage,
+    'message-summary': summary,
+    'message-text': text,
+  }
+}

@@ -1,10 +1,11 @@
 import { setFailed } from '@actions/core'
+import { context } from '@actions/github'
 import { ChatPostMessageArguments, ChatUpdateArguments, WebClient } from '@slack/web-api'
 import { inspect } from 'util'
 
-import * as state from 'utils/state'
 import * as github from 'utils/github'
 import * as log from 'utils/log'
+import * as state from 'utils/state'
 
 import { buildAttachmentsMessage, lookupChannel } from 'utils/slack'
 
@@ -108,13 +109,17 @@ const cleanup = async (): Promise<void> => {
   }
 }
 
-log.debug('Observed information: ')
-log.debug(inspect(state, false, null))
-
 if (!state.isPost) {
-  console.log('Posting message')
-  run()
+  log.group('Processing', run)
 } else {
-  console.log('Post-action cleanup')
-  cleanup()
+  log.group('Cleaning up...', cleanup)
+}
+
+if (log.isDebug) {
+  log.startGroup('State information')
+  log.debug(inspect(state.currentState(), false, null))
+  log.endGroup()
+  log.startGroup('Job information')
+  log.debug(inspect(context, false, null))
+  log.endGroup()
 }
