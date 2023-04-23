@@ -33,6 +33,13 @@ export const listCurrentJobsForWorkflowRun = async (): Promise<
 
 const jobMatcher = /(?<name>\w+) \((?<matrix>[^()]+)\)/
 
+
+const getMatrixData = (): string[] | undefined => {
+  const values = Object.values(state.matrix)
+  if (values.length === 0) return
+  return values.flat()
+}
+
 /**
  * GitHub does not provide the matrix information or a _full_ job name if you are
  * running inside a matrix. We work around this by passing the matrix data as json
@@ -46,14 +53,14 @@ const jobMatcher = /(?<name>\w+) \((?<matrix>[^()]+)\)/
  * @returns True if the job is the current one based on matrix data
  */
 export const matchJobByName = (jobItem: components['schemas']['job']): boolean => {
-  if (Object.entries(state.matrix).length) {
-    const values = Object.values(state.matrix)
+  const matrixData = getMatrixData()
+  if (matrixData) {
     const { name = '', matrix = '' } = jobItem.name.match(jobMatcher)?.groups || {}
 
     if (name.trim() !== job) return false
-    const matrixParts = matrix.split(', ')
+    const matrixParts = matrix.split(', ') as string[]
 
-    return matrixParts.every((x) => values.indexOf(x) !== -1)
+    return matrixParts.every((x) => matrixData.indexOf(x) !== -1)
   }
   return jobItem.name === job
 }
