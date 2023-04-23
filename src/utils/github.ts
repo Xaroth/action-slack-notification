@@ -52,6 +52,8 @@ const getMatrixData = (): string[] | undefined => {
  * @returns True if the job is the current one based on matrix data
  */
 export const matchJobByName = (jobItem: components['schemas']['job']): boolean => {
+  if (jobItem.name === job) return true
+
   const matrixData = getMatrixData()
   log.debug(`Matrix fields: ${inspect(matrixData, false, null)}`)
   if (matrixData) {
@@ -65,7 +67,8 @@ export const matchJobByName = (jobItem: components['schemas']['job']): boolean =
 
     return matrixParts.every((x) => matrixData.indexOf(x) !== -1)
   }
-  return jobItem.name === job
+
+  return false
 }
 
 type CurrentJob = components['schemas']['job']

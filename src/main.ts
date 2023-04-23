@@ -109,17 +109,20 @@ const cleanup = async (): Promise<void> => {
   }
 }
 
-if (!state.isPost) {
-  log.group('Processing', run)
-} else {
-  log.group('Cleaning up...', cleanup)
-}
+async function main(): Promise<void> {
+  if (log.isDebug) {
+    log.startGroup('State information')
+    log.debug(inspect(state.currentState(), false, null))
+    log.endGroup()
+    log.startGroup('Job information')
+    log.debug(inspect(context, false, null))
+    log.endGroup()
+  }
 
-if (log.isDebug) {
-  log.startGroup('State information')
-  log.debug(inspect(state.currentState(), false, null))
-  log.endGroup()
-  log.startGroup('Job information')
-  log.debug(inspect(context, false, null))
-  log.endGroup()
+  if (state.isPost) {
+    await log.group('Cleaning up...', cleanup)
+  } else {
+    await log.group('Processing', run)
+  }
 }
+main()

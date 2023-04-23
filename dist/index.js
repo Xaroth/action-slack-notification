@@ -19717,11 +19717,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __nccwpck_require__(2186);
+const github_1 = __nccwpck_require__(5438);
 const web_api_1 = __nccwpck_require__(431);
 const util_1 = __nccwpck_require__(3837);
-const state = __importStar(__nccwpck_require__(403));
 const github = __importStar(__nccwpck_require__(1225));
 const log = __importStar(__nccwpck_require__(8410));
+const state = __importStar(__nccwpck_require__(403));
 const slack_1 = __nccwpck_require__(806);
 const run = async () => {
     const currentJob = await github.getCurrentJobForWorkflowRun();
@@ -19808,17 +19809,23 @@ const cleanup = async () => {
         // TODO: Notify user we never sent a message.
     }
 };
-if (!state.isPost) {
-    log.group('Processing', run);
+async function main() {
+    if (log.isDebug) {
+        log.startGroup('State information');
+        log.debug((0, util_1.inspect)(state.currentState(), false, null));
+        log.endGroup();
+        log.startGroup('Job information');
+        log.debug((0, util_1.inspect)(github_1.context, false, null));
+        log.endGroup();
+    }
+    if (state.isPost) {
+        await log.group('Cleaning up...', cleanup);
+    }
+    else {
+        await log.group('Processing', run);
+    }
 }
-else {
-    log.group('Cleaning up...', cleanup);
-}
-if (log.isDebug) {
-    log.startGroup('State information');
-    log.debug((0, util_1.inspect)(state.currentState(), false, null));
-    log.endGroup();
-}
+main();
 
 
 /***/ }),
@@ -19893,17 +19900,21 @@ const getMatrixData = () => {
  */
 const matchJobByName = (jobItem) => {
     var _a;
+    if (jobItem.name === job)
+        return true;
     const matrixData = getMatrixData();
     log.debug(`Matrix fields: ${(0, util_1.inspect)(matrixData, false, null)}`);
     if (matrixData) {
         const { name = '', matrix = '' } = ((_a = jobItem.name.match(jobMatcher)) === null || _a === void 0 ? void 0 : _a.groups) || {};
+        log.debug(`Job name: '${name.trim()}'`);
+        log.debug(`Expected job name: ${job}`);
         if (name.trim() !== job)
             return false;
         const matrixParts = matrix.split(', ');
         log.debug(`Job matrix fields: ${(0, util_1.inspect)(matrixParts, false, null)}`);
         return matrixParts.every((x) => matrixData.indexOf(x) !== -1);
     }
-    return jobItem.name === job;
+    return false;
 };
 exports.matchJobByName = matchJobByName;
 const getCurrentJobForWorkflowRun = async () => {
