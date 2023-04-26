@@ -24242,12 +24242,18 @@ const workflowField = {
     short: true,
 };
 const buildTitle = () => {
-    var _a, _b;
+    var _a, _b, _c;
+    if (state.messageTitle) {
+        return {
+            title: state.messageTitle,
+            title_link: (_a = state.messageLink) !== null && _a !== void 0 ? _a : undefined,
+        };
+    }
     switch (eventName) {
         case 'pull_request':
             return {
-                title: `${eventTitle} [${payload.action}]: ${(_a = payload.pull_request) === null || _a === void 0 ? void 0 : _a.title}`,
-                title_link: (_b = payload.pull_request) === null || _b === void 0 ? void 0 : _b.html_url,
+                title: `${eventTitle} [${payload.action}]: ${(_b = payload.pull_request) === null || _b === void 0 ? void 0 : _b.title}`,
+                title_link: (_c = payload.pull_request) === null || _c === void 0 ? void 0 : _c.html_url,
             };
         case 'release':
             return {
@@ -24405,9 +24411,9 @@ exports["default"] = stateHelper;
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageType = exports.messageType = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setJobNames = exports.jobNames = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
+exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageType = exports.messageType = exports.setMessageLink = exports.messageLink = exports.setMessageTitle = exports.messageTitle = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setJobNames = exports.jobNames = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
 const core_1 = __nccwpck_require__(2186);
 const state_helper_1 = __importDefault(__nccwpck_require__(1622));
 const getState = (name) => process.env[`STATE_${name}`];
@@ -24437,10 +24443,12 @@ _e = (0, state_helper_1.default)('job-names', {
 exports.channelName = (0, core_1.getInput)('channel-name');
 _f = (0, state_helper_1.default)('channel-id', { output: true }), exports.channelId = _f[0], exports.setChannelId = _f[1];
 _g = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _g[0], exports.setMessageId = _g[1];
-_h = (0, state_helper_1.default)('message-type', { defaultValue: 'rich' }), exports.messageType = _h[0], exports.setMessageType = _h[1];
-_j = (0, state_helper_1.default)('message-custom'), exports.customMessage = _j[0], exports.setCustomMessage = _j[1];
-_k = (0, state_helper_1.default)('message-summary'), exports.summary = _k[0], exports.setSummary = _k[1];
-_l = (0, state_helper_1.default)('message-text'), exports.text = _l[0], exports.setText = _l[1];
+_h = (0, state_helper_1.default)('message-title'), exports.messageTitle = _h[0], exports.setMessageTitle = _h[1];
+_j = (0, state_helper_1.default)('message-link'), exports.messageLink = _j[0], exports.setMessageLink = _j[1];
+_k = (0, state_helper_1.default)('message-type', { defaultValue: 'rich' }), exports.messageType = _k[0], exports.setMessageType = _k[1];
+_l = (0, state_helper_1.default)('message-custom'), exports.customMessage = _l[0], exports.setCustomMessage = _l[1];
+_m = (0, state_helper_1.default)('message-summary'), exports.summary = _m[0], exports.setSummary = _m[1];
+_o = (0, state_helper_1.default)('message-text'), exports.text = _o[0], exports.setText = _o[1];
 const currentState = () => {
     // Instead of just dumping the entire state, we sanitize it a bit, adding some more descriptive names.
     return {

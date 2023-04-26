@@ -45,6 +45,12 @@ const workflowField = {
 }
 
 const buildTitle = (): Partial<MessageAttachment> => {
+  if (state.messageTitle) {
+    return {
+      title: state.messageTitle,
+      title_link: state.messageLink ?? undefined,
+    }
+  }
   switch (eventName) {
     case 'pull_request':
       return {

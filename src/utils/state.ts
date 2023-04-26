@@ -32,6 +32,8 @@ export const [channelId, setChannelId] = stateHelper('channel-id', { output: tru
 
 export const [messageId, setMessageId] = stateHelper('message-id', { output: true })
 
+export const [messageTitle, setMessageTitle] = stateHelper('message-title')
+export const [messageLink, setMessageLink] = stateHelper('message-link')
 export const [messageType, setMessageType] = stateHelper<'rich' | 'plain'>('message-type', { defaultValue: 'rich' })
 export const [customMessage, setCustomMessage] = stateHelper('message-custom')
 export const [summary, setSummary] = stateHelper('message-summary')
