@@ -21,11 +21,18 @@ export const [matrix, setMatrix] = stateHelper<Record<string, string>>('matrix',
   defaultValue: {},
 })
 
+export const [jobNames, setJobNames] = stateHelper<Record<string, string>>('job-names', {
+  toValue: (val: string) => JSON.parse(val),
+  fromValue: (val: Record<string, string>) => JSON.stringify(val),
+  defaultValue: {},
+  useFromInput: false,
+})
 export const channelName = getInput('channel-name')
 export const [channelId, setChannelId] = stateHelper('channel-id', { output: true })
 
 export const [messageId, setMessageId] = stateHelper('message-id', { output: true })
 
+export const [messageType, setMessageType] = stateHelper<'rich' | 'plain'>('message-type', { defaultValue: 'rich' })
 export const [customMessage, setCustomMessage] = stateHelper('message-custom')
 export const [summary, setSummary] = stateHelper('message-summary')
 export const [text, setText] = stateHelper('message-text')

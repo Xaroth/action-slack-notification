@@ -5,7 +5,8 @@ import type { components } from '@octokit/openapi-types/types'
 import type { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types'
 import { inspect } from 'util'
 import { load } from 'js-yaml'
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
+import { resolve, join } from 'path'
 
 import * as state from './state'
 import * as log from './log'
@@ -13,6 +14,7 @@ import * as log from './log'
 const {
   apiUrl: baseUrl,
   job,
+  workflow: workflowName,
   payload: { workflow },
 } = context
 
@@ -27,15 +29,53 @@ interface Workflow {
   >
 }
 
-let jobName: string = job
-try {
-  const contents = readFileSync(workflow, 'utf8')
-  const data = load(contents) as Workflow
-  jobName = data.jobs[job]?.name ?? job
-} catch (e) {
-  log.error(`Unable to parse workflow file ${workflow}: ${e}`)
-  log.warning('Be sure to run actions/checkout@v3 _before_ this action.')
+const getWorkflowFile = (): string | undefined => {
+  if (workflow) return workflow
+  if (workflowName.startsWith('.github/workflows/')) return workflowName
+
+  log.debug(`No workflow payload, detecting workflow file from ${workflowName}`)
+  try {
+    const dname = resolve('.github/workflows/')
+    const files = readdirSync(dname)
+    for (const fname of files) {
+      const path = join(dname, fname)
+      if (fname.endsWith('.yml') || fname.endsWith('.yaml')) {
+        const contents = readFileSync(path, 'utf8')
+        const data = load(contents) as Workflow
+        if (data.name === workflowName) {
+          return join('.github/workflows/', fname)
+        }
+      }
+    }
+  } catch (e) {
+    log.error(`Unable to detect workflow file: ${e}`)
+    log.warning('Be sure to run actions/checkout@v3 _before_ this action.')
+  }
 }
+
+if (Object.entries(state.jobNames).length === 0) {
+  log.debug(inspect(context))
+  const fname = getWorkflowFile()
+  if (!fname) {
+    log.error('Unable to detect workflow file')
+  } else {
+    log.debug(`No job names found in state, attempting to parse workflow file ${fname}`)
+    try {
+      const contents = readFileSync(fname, 'utf8')
+      const data = load(contents) as Workflow
+
+      for (const [jobKey, jobItem] of Object.entries(data.jobs)) {
+        state.jobNames[jobKey] = jobItem.name ?? jobKey
+      }
+      state.setJobNames(state.jobNames)
+    } catch (e) {
+      log.error(`Unable to parse workflow file ${fname}: ${e}`)
+      log.warning('Be sure to run actions/checkout@v3 _before_ this action.')
+    }
+  }
+}
+const jobName = state.jobNames[job] ?? job
+
 if (jobName.indexOf('${{') !== -1) {
   log.warning('Job name contains a matrix variable. This is not supported.')
 }

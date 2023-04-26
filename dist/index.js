@@ -23973,19 +23973,58 @@ const github_1 = __nccwpck_require__(5438);
 const util_1 = __nccwpck_require__(3837);
 const js_yaml_1 = __nccwpck_require__(1917);
 const fs_1 = __nccwpck_require__(7147);
+const path_1 = __nccwpck_require__(1017);
 const state = __importStar(__nccwpck_require__(403));
 const log = __importStar(__nccwpck_require__(8410));
-const { apiUrl: baseUrl, job, payload: { workflow }, } = github_1.context;
-let jobName = job;
-try {
-    const contents = (0, fs_1.readFileSync)(workflow, 'utf8');
-    const data = (0, js_yaml_1.load)(contents);
-    jobName = (_b = (_a = data.jobs[job]) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : job;
+const { apiUrl: baseUrl, job, workflow: workflowName, payload: { workflow }, } = github_1.context;
+const getWorkflowFile = () => {
+    if (workflow)
+        return workflow;
+    if (workflowName.startsWith('.github/workflows/'))
+        return workflowName;
+    log.debug(`No workflow payload, detecting workflow file from ${workflowName}`);
+    try {
+        const dname = (0, path_1.resolve)('.github/workflows/');
+        const files = (0, fs_1.readdirSync)(dname);
+        for (const fname of files) {
+            const path = (0, path_1.join)(dname, fname);
+            if (fname.endsWith('.yml') || fname.endsWith('.yaml')) {
+                const contents = (0, fs_1.readFileSync)(path, 'utf8');
+                const data = (0, js_yaml_1.load)(contents);
+                if (data.name === workflowName) {
+                    return (0, path_1.join)('.github/workflows/', fname);
+                }
+            }
+        }
+    }
+    catch (e) {
+        log.error(`Unable to detect workflow file: ${e}`);
+        log.warning('Be sure to run actions/checkout@v3 _before_ this action.');
+    }
+};
+if (Object.entries(state.jobNames).length === 0) {
+    log.debug((0, util_1.inspect)(github_1.context));
+    const fname = getWorkflowFile();
+    if (!fname) {
+        log.error('Unable to detect workflow file');
+    }
+    else {
+        log.debug(`No job names found in state, attempting to parse workflow file ${fname}`);
+        try {
+            const contents = (0, fs_1.readFileSync)(fname, 'utf8');
+            const data = (0, js_yaml_1.load)(contents);
+            for (const [jobKey, jobItem] of Object.entries(data.jobs)) {
+                state.jobNames[jobKey] = (_a = jobItem.name) !== null && _a !== void 0 ? _a : jobKey;
+            }
+            state.setJobNames(state.jobNames);
+        }
+        catch (e) {
+            log.error(`Unable to parse workflow file ${fname}: ${e}`);
+            log.warning('Be sure to run actions/checkout@v3 _before_ this action.');
+        }
+    }
 }
-catch (e) {
-    log.error(`Unable to parse workflow file ${workflow}: ${e}`);
-    log.warning('Be sure to run actions/checkout@v3 _before_ this action.');
-}
+const jobName = (_b = state.jobNames[job]) !== null && _b !== void 0 ? _b : job;
 if (jobName.indexOf('${{') !== -1) {
     log.warning('Job name contains a matrix variable. This is not supported.');
 }
@@ -24279,7 +24318,7 @@ const buildAttachmentsMessage = ({ status, jobId }) => {
     return [
         {
             color,
-            fields,
+            fields: state.messageType === 'rich' ? fields : undefined,
             author_name: actor,
             author_link: `${serverUrl}/${actor}`,
             footer_icon: 'https://github.githubassets.com/favicon.ico',
@@ -24366,9 +24405,9 @@ exports["default"] = stateHelper;
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
+exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageType = exports.messageType = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setJobNames = exports.jobNames = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
 const core_1 = __nccwpck_require__(2186);
 const state_helper_1 = __importDefault(__nccwpck_require__(1622));
 const getState = (name) => process.env[`STATE_${name}`];
@@ -24389,12 +24428,19 @@ _d = (0, state_helper_1.default)('matrix', {
     fromValue: (val) => JSON.stringify(val),
     defaultValue: {},
 }), exports.matrix = _d[0], exports.setMatrix = _d[1];
+_e = (0, state_helper_1.default)('job-names', {
+    toValue: (val) => JSON.parse(val),
+    fromValue: (val) => JSON.stringify(val),
+    defaultValue: {},
+    useFromInput: false,
+}), exports.jobNames = _e[0], exports.setJobNames = _e[1];
 exports.channelName = (0, core_1.getInput)('channel-name');
-_e = (0, state_helper_1.default)('channel-id', { output: true }), exports.channelId = _e[0], exports.setChannelId = _e[1];
-_f = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _f[0], exports.setMessageId = _f[1];
-_g = (0, state_helper_1.default)('message-custom'), exports.customMessage = _g[0], exports.setCustomMessage = _g[1];
-_h = (0, state_helper_1.default)('message-summary'), exports.summary = _h[0], exports.setSummary = _h[1];
-_j = (0, state_helper_1.default)('message-text'), exports.text = _j[0], exports.setText = _j[1];
+_f = (0, state_helper_1.default)('channel-id', { output: true }), exports.channelId = _f[0], exports.setChannelId = _f[1];
+_g = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _g[0], exports.setMessageId = _g[1];
+_h = (0, state_helper_1.default)('message-type', { defaultValue: 'rich' }), exports.messageType = _h[0], exports.setMessageType = _h[1];
+_j = (0, state_helper_1.default)('message-custom'), exports.customMessage = _j[0], exports.setCustomMessage = _j[1];
+_k = (0, state_helper_1.default)('message-summary'), exports.summary = _k[0], exports.setSummary = _k[1];
+_l = (0, state_helper_1.default)('message-text'), exports.text = _l[0], exports.setText = _l[1];
 const currentState = () => {
     // Instead of just dumping the entire state, we sanitize it a bit, adding some more descriptive names.
     return {
