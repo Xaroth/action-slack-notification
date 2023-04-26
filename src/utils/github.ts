@@ -27,15 +27,23 @@ interface Workflow {
   >
 }
 
-let jobName: string = job
-try {
-  const contents = readFileSync(workflow, 'utf8')
-  const data = load(contents) as Workflow
-  jobName = data.jobs[job]?.name ?? job
-} catch (e) {
-  log.error(`Unable to parse workflow file ${workflow}: ${e}`)
-  log.warning('Be sure to run actions/checkout@v3 _before_ this action.')
+if (Object.entries(state.jobNames).length === 0) {
+  log.debug(`No job names found in state, attempting to parse workflow file ${workflow}`)
+  try {
+    const contents = readFileSync(workflow, 'utf8')
+    const data = load(contents) as Workflow
+
+    for (const [jobKey, jobItem] of Object.entries(data.jobs)) {
+      state.jobNames[jobKey] = jobItem.name ?? jobKey
+    }
+    state.setJobNames(state.jobNames)
+  } catch (e) {
+    log.error(`Unable to parse workflow file ${workflow}: ${e}`)
+    log.warning('Be sure to run actions/checkout@v3 _before_ this action.')
+  }
 }
+const jobName = state.jobNames[job] ?? job
+
 if (jobName.indexOf('${{') !== -1) {
   log.warning('Job name contains a matrix variable. This is not supported.')
 }

@@ -136,7 +136,7 @@ export const buildAttachmentsMessage = ({ status, jobId }: MessageProps): Messag
   return [
     {
       color,
-      fields,
+      fields: state.messageType === 'rich' ? fields : undefined,
       author_name: actor,
       author_link: `${serverUrl}/${actor}`,
       footer_icon: 'https://github.githubassets.com/favicon.ico',

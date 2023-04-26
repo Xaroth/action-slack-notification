@@ -23975,16 +23975,22 @@ const fs_1 = __nccwpck_require__(7147);
 const state = __importStar(__nccwpck_require__(403));
 const log = __importStar(__nccwpck_require__(8410));
 const { apiUrl: baseUrl, job, payload: { workflow }, } = github_1.context;
-let jobName = job;
-try {
-    const contents = (0, fs_1.readFileSync)(workflow, 'utf8');
-    const data = (0, js_yaml_1.load)(contents);
-    jobName = (_b = (_a = data.jobs[job]) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : job;
+if (Object.entries(state.jobNames).length === 0) {
+    log.debug(`No job names found in state, attempting to parse workflow file ${workflow}`);
+    try {
+        const contents = (0, fs_1.readFileSync)(workflow, 'utf8');
+        const data = (0, js_yaml_1.load)(contents);
+        for (const [jobKey, jobItem] of Object.entries(data.jobs)) {
+            state.jobNames[jobKey] = (_a = jobItem.name) !== null && _a !== void 0 ? _a : jobKey;
+        }
+        state.setJobNames(state.jobNames);
+    }
+    catch (e) {
+        log.error(`Unable to parse workflow file ${workflow}: ${e}`);
+        log.warning('Be sure to run actions/checkout@v3 _before_ this action.');
+    }
 }
-catch (e) {
-    log.error(`Unable to parse workflow file ${workflow}: ${e}`);
-    log.warning('Be sure to run actions/checkout@v3 _before_ this action.');
-}
+const jobName = (_b = state.jobNames[job]) !== null && _b !== void 0 ? _b : job;
 if (jobName.indexOf('${{') !== -1) {
     log.warning('Job name contains a matrix variable. This is not supported.');
 }
@@ -24278,7 +24284,7 @@ const buildAttachmentsMessage = ({ status, jobId }) => {
     return [
         {
             color,
-            fields,
+            fields: state.messageType === 'rich' ? fields : undefined,
             author_name: actor,
             author_link: `${serverUrl}/${actor}`,
             footer_icon: 'https://github.githubassets.com/favicon.ico',
@@ -24365,9 +24371,9 @@ exports["default"] = stateHelper;
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.status = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setHasRunBefore = exports.hasRunBefore = exports.setIsPost = exports.isPost = void 0;
+exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageType = exports.messageType = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.status = exports.setJobNames = exports.jobNames = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setHasRunBefore = exports.hasRunBefore = exports.setIsPost = exports.isPost = void 0;
 const core_1 = __nccwpck_require__(2186);
 const state_helper_1 = __importDefault(__nccwpck_require__(1622));
 const getState = (name) => process.env[`STATE_${name}`];
@@ -24387,6 +24393,7 @@ _b = (0, state_helper_1.default)('has-run-before', {
     toValue: (val) => !!val,
     fromValue: () => `true`,
     defaultValue: false,
+    useFromInput: false,
 }), exports.hasRunBefore = _b[0], exports.setHasRunBefore = _b[1];
 // This does not update hasRunBefore
 (0, exports.setHasRunBefore)(true);
@@ -24397,13 +24404,20 @@ _e = (0, state_helper_1.default)('matrix', {
     fromValue: (val) => JSON.stringify(val),
     defaultValue: {},
 }), exports.matrix = _e[0], exports.setMatrix = _e[1];
+_f = (0, state_helper_1.default)('job-names', {
+    toValue: (val) => JSON.parse(val),
+    fromValue: (val) => JSON.stringify(val),
+    defaultValue: {},
+    useFromInput: false,
+}), exports.jobNames = _f[0], exports.setJobNames = _f[1];
 exports.status = (0, core_1.getInput)('job-status');
 exports.channelName = (0, core_1.getInput)('channel-name');
-_f = (0, state_helper_1.default)('channel-id', { output: true }), exports.channelId = _f[0], exports.setChannelId = _f[1];
-_g = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _g[0], exports.setMessageId = _g[1];
-_h = (0, state_helper_1.default)('message-custom'), exports.customMessage = _h[0], exports.setCustomMessage = _h[1];
-_j = (0, state_helper_1.default)('message-summary'), exports.summary = _j[0], exports.setSummary = _j[1];
-_k = (0, state_helper_1.default)('message-text'), exports.text = _k[0], exports.setText = _k[1];
+_g = (0, state_helper_1.default)('channel-id', { output: true }), exports.channelId = _g[0], exports.setChannelId = _g[1];
+_h = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _h[0], exports.setMessageId = _h[1];
+_j = (0, state_helper_1.default)('message-type', { defaultValue: 'rich' }), exports.messageType = _j[0], exports.setMessageType = _j[1];
+_k = (0, state_helper_1.default)('message-custom'), exports.customMessage = _k[0], exports.setCustomMessage = _k[1];
+_l = (0, state_helper_1.default)('message-summary'), exports.summary = _l[0], exports.setSummary = _l[1];
+_m = (0, state_helper_1.default)('message-text'), exports.text = _m[0], exports.setText = _m[1];
 const currentState = () => {
     // Instead of just dumping the entire state, we sanitize it a bit, adding some more descriptive names.
     return {

@@ -12,6 +12,13 @@ inputs:
     description: The status of the current running job. You do not need to set this.
     required: false
     default: ${{ job.status }}
+  message-type:
+    description: Whether to display a rich message, or a simple text message.
+    default: 'rich'
+    required: false
+    options:
+      - rich
+      - text
   channel-name:
     description: The name of the Slack channel to send to. Required if `channel-id` is not provided. Requires the `channels:read` and `groups:read` OAuth Scopes on slack.
     requires: false
