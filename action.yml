@@ -14,11 +14,21 @@ inputs:
     options:
       - rich
       - text
+  show-footer:
+    type: boolean
+    required: false
+    description: Whether to show the footer (linking to the repository) or not.
   channel-name:
     description: The name of the Slack channel to send to. Required if `channel-id` is not provided. Requires the `channels:read` and `groups:read` OAuth Scopes on slack.
     requires: false
   channel-id:
     description: The ID of the Slack channel to send to. Required if `channel-name` is not provided.
+    required: false
+  message-title:
+    description: The title of the message to send.
+    required: false
+  message-link:
+    description: The link for the title of the message to send.
     required: false
   message-id:
     description: The ID of the existing slack message to update.

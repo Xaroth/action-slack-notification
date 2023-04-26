@@ -24321,18 +24321,23 @@ const buildAttachmentsMessage = ({ status, jobId }) => {
         fields.push(buildMatrixField(state.matrix));
     if (state.customMessage)
         fields.push(buildCustomMessageField(state.customMessage));
+    const footer = state.showFooter
+        ? {
+            footer_icon: 'https://github.githubassets.com/favicon.ico',
+            footer: `<${repoUrl} | ${repository}>`,
+        }
+        : {};
     return [
         {
             color,
             fields: state.messageType === 'rich' ? fields : undefined,
             author_name: actor,
             author_link: `${serverUrl}/${actor}`,
-            footer_icon: 'https://github.githubassets.com/favicon.ico',
-            footer: `<${repoUrl} | ${repository}>`,
             ts: `${Math.floor(Date.now() / 1000)}`,
             mrkdwn_in: ['pretext', 'text'],
             pretext: state.text || undefined,
             text: state.summary || undefined,
+            ...footer,
             ...buildTitle(),
         },
     ];
@@ -24411,9 +24416,9 @@ exports["default"] = stateHelper;
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageType = exports.messageType = exports.setMessageLink = exports.messageLink = exports.setMessageTitle = exports.messageTitle = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setJobNames = exports.jobNames = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
+exports.currentState = exports.setText = exports.text = exports.setSummary = exports.summary = exports.setCustomMessage = exports.customMessage = exports.setMessageType = exports.messageType = exports.setShowFooter = exports.showFooter = exports.setMessageLink = exports.messageLink = exports.setMessageTitle = exports.messageTitle = exports.setMessageId = exports.messageId = exports.setChannelId = exports.channelId = exports.channelName = exports.setJobNames = exports.jobNames = exports.setMatrix = exports.matrix = exports.setGithubToken = exports.githubToken = exports.setSlackToken = exports.slackToken = exports.setIsPost = exports.isPost = void 0;
 const core_1 = __nccwpck_require__(2186);
 const state_helper_1 = __importDefault(__nccwpck_require__(1622));
 const getState = (name) => process.env[`STATE_${name}`];
@@ -24427,16 +24432,19 @@ _a = (0, state_helper_1.default)('is-post', {
 }), exports.isPost = _a[0], exports.setIsPost = _a[1];
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 (0, exports.setIsPost)(true);
+const jsonStateHelper = (name, options) => (0, state_helper_1.default)(name, {
+    ...options,
+    toValue: (val) => {
+        if (typeof val !== 'string')
+            return val;
+        return JSON.parse(val);
+    },
+    fromValue: (val) => JSON.stringify(val),
+});
 _b = (0, state_helper_1.default)('slack-token', { isSensitive: true }), exports.slackToken = _b[0], exports.setSlackToken = _b[1];
 _c = (0, state_helper_1.default)('github-token', { required: true, isSensitive: true }), exports.githubToken = _c[0], exports.setGithubToken = _c[1];
-_d = (0, state_helper_1.default)('matrix', {
-    toValue: (val) => JSON.parse(val),
-    fromValue: (val) => JSON.stringify(val),
-    defaultValue: {},
-}), exports.matrix = _d[0], exports.setMatrix = _d[1];
-_e = (0, state_helper_1.default)('job-names', {
-    toValue: (val) => JSON.parse(val),
-    fromValue: (val) => JSON.stringify(val),
+_d = jsonStateHelper('matrix', { defaultValue: {} }), exports.matrix = _d[0], exports.setMatrix = _d[1];
+_e = jsonStateHelper('job-names', {
     defaultValue: {},
     useFromInput: false,
 }), exports.jobNames = _e[0], exports.setJobNames = _e[1];
@@ -24445,10 +24453,11 @@ _f = (0, state_helper_1.default)('channel-id', { output: true }), exports.channe
 _g = (0, state_helper_1.default)('message-id', { output: true }), exports.messageId = _g[0], exports.setMessageId = _g[1];
 _h = (0, state_helper_1.default)('message-title'), exports.messageTitle = _h[0], exports.setMessageTitle = _h[1];
 _j = (0, state_helper_1.default)('message-link'), exports.messageLink = _j[0], exports.setMessageLink = _j[1];
-_k = (0, state_helper_1.default)('message-type', { defaultValue: 'rich' }), exports.messageType = _k[0], exports.setMessageType = _k[1];
-_l = (0, state_helper_1.default)('message-custom'), exports.customMessage = _l[0], exports.setCustomMessage = _l[1];
-_m = (0, state_helper_1.default)('message-summary'), exports.summary = _m[0], exports.setSummary = _m[1];
-_o = (0, state_helper_1.default)('message-text'), exports.text = _o[0], exports.setText = _o[1];
+_k = jsonStateHelper('show-footer', { defaultValue: true }), exports.showFooter = _k[0], exports.setShowFooter = _k[1];
+_l = (0, state_helper_1.default)('message-type', { defaultValue: 'rich' }), exports.messageType = _l[0], exports.setMessageType = _l[1];
+_m = (0, state_helper_1.default)('message-custom'), exports.customMessage = _m[0], exports.setCustomMessage = _m[1];
+_o = (0, state_helper_1.default)('message-summary'), exports.summary = _o[0], exports.setSummary = _o[1];
+_p = (0, state_helper_1.default)('message-text'), exports.text = _p[0], exports.setText = _p[1];
 const currentState = () => {
     // Instead of just dumping the entire state, we sanitize it a bit, adding some more descriptive names.
     return {
@@ -24459,9 +24468,12 @@ const currentState = () => {
         'channel-name': exports.channelName,
         'channel-id': exports.channelId,
         'message-id': exports.messageId,
+        'message-title': exports.messageTitle,
+        'message-link': exports.messageLink,
         'message-custom': exports.customMessage,
         'message-summary': exports.summary,
         'message-text': exports.text,
+        'show-footer': exports.showFooter,
     };
 };
 exports.currentState = currentState;

@@ -1,5 +1,5 @@
 import { getInput, saveState } from '@actions/core'
-import stateHelper from 'utils/state-helper'
+import stateHelper, { StateHelperOptions, StateHelper } from 'utils/state-helper'
 
 const getState = (name: string): string | undefined => process.env[`STATE_${name}`]
 export const [isPost, setIsPost] = stateHelper<boolean>('is-post', {
@@ -13,17 +13,21 @@ export const [isPost, setIsPost] = stateHelper<boolean>('is-post', {
 // Setting this does not update `isPost`, it merely makes sure that we can detect if we're in the post action.
 setIsPost(true)
 
+const jsonStateHelper = <T>(name: string, options: StateHelperOptions<T>): StateHelper<T> =>
+  stateHelper<T>(name, {
+    ...options,
+    toValue: <T>(val: string): T => {
+      if (typeof val !== 'string') return val
+      return JSON.parse(val)
+    },
+    fromValue: <T>(val: T): string => JSON.stringify(val),
+  })
+
 export const [slackToken, setSlackToken] = stateHelper('slack-token', { isSensitive: true })
 export const [githubToken, setGithubToken] = stateHelper('github-token', { required: true, isSensitive: true })
-export const [matrix, setMatrix] = stateHelper<Record<string, string>>('matrix', {
-  toValue: (val: string) => JSON.parse(val),
-  fromValue: (val: Record<string, string>) => JSON.stringify(val),
-  defaultValue: {},
-})
+export const [matrix, setMatrix] = jsonStateHelper<Record<string, string>>('matrix', { defaultValue: {} })
 
-export const [jobNames, setJobNames] = stateHelper<Record<string, string>>('job-names', {
-  toValue: (val: string) => JSON.parse(val),
-  fromValue: (val: Record<string, string>) => JSON.stringify(val),
+export const [jobNames, setJobNames] = jsonStateHelper<Record<string, string>>('job-names', {
   defaultValue: {},
   useFromInput: false,
 })
@@ -34,6 +38,7 @@ export const [messageId, setMessageId] = stateHelper('message-id', { output: tru
 
 export const [messageTitle, setMessageTitle] = stateHelper('message-title')
 export const [messageLink, setMessageLink] = stateHelper('message-link')
+export const [showFooter, setShowFooter] = jsonStateHelper<boolean>('show-footer', { defaultValue: true })
 export const [messageType, setMessageType] = stateHelper<'rich' | 'plain'>('message-type', { defaultValue: 'rich' })
 export const [customMessage, setCustomMessage] = stateHelper('message-custom')
 export const [summary, setSummary] = stateHelper('message-summary')
@@ -49,8 +54,11 @@ export const currentState = (): Record<string, unknown> => {
     'channel-name': channelName,
     'channel-id': channelId,
     'message-id': messageId,
+    'message-title': messageTitle,
+    'message-link': messageLink,
     'message-custom': customMessage,
     'message-summary': summary,
     'message-text': text,
+    'show-footer': showFooter,
   }
 }

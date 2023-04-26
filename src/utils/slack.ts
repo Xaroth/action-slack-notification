@@ -139,18 +139,24 @@ export const buildAttachmentsMessage = ({ status, jobId }: MessageProps): Messag
   if (state.matrix && Object.entries(state.matrix).length) fields.push(buildMatrixField(state.matrix))
   if (state.customMessage) fields.push(buildCustomMessageField(state.customMessage))
 
+  const footer = state.showFooter
+    ? {
+        footer_icon: 'https://github.githubassets.com/favicon.ico',
+        footer: `<${repoUrl} | ${repository}>`,
+      }
+    : {}
+
   return [
     {
       color,
       fields: state.messageType === 'rich' ? fields : undefined,
       author_name: actor,
       author_link: `${serverUrl}/${actor}`,
-      footer_icon: 'https://github.githubassets.com/favicon.ico',
-      footer: `<${repoUrl} | ${repository}>`,
       ts: `${Math.floor(Date.now() / 1000)}`,
       mrkdwn_in: ['pretext', 'text'],
       pretext: state.text || undefined,
       text: state.summary || undefined,
+      ...footer,
       ...buildTitle(),
     },
   ]
